@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>クリッカーシミュレーター</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      text-align: center;
+      background: linear-gradient(135deg, #1e3c72, #2a5298);
+      color: #fff;
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+    }
+    .container {
+      max-width: 700px;
+      margin: 20px auto;
+      padding: 20px;
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 15px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    }
+    h2 {
+      color: #1e3c72;
+      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+    }
+    button {
+      padding: 12px 24px;
+      margin: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      border: none;
+      border-radius: 8px;
+      transition: transform 0.2s, box-shadow 0.2s;
+      color: white;
+    }
+    button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    }
+    button:active {
+      transform: scale(0.95);
+    }
+    #clickButton {
+      font-size: 28px;
+      padding: 20px 40px;
+      background: #e91e63;
+      border-radius: 50%;
+      width: 100px;
+      height: 100px;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+    .point-pop {
+      position: absolute;
+      color: #ffd700;
+      font-size: 20px;
+      font-weight: bold;
+      animation: floatUp 1s ease-out forwards;
+      pointer-events: none;
+    }
+    @keyframes floatUp {
+      0% { opacity: 1; transform: translateY(0); }
+      100% { opacity: 0; transform: translateY(-50px); }
+    }
+    #loginScreen, #gameScreen, #upgradesScreen, #settingsScreen {
+      display: none;
+    }
+    #loginScreen.active, #gameScreen.active, #upgradesScreen.active, #settingsScreen.active {
+      display: block;
+    }
+    .tab-bar {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .tab-button {
+      background: #3f51b5;
+    }
+    .upgrade-section {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .upgrade-button {
+      background: #ff5722;
+      position: relative;
+      overflow: hidden;
+    }
+    .upgrade-button.disabled {
+      background: #999;
+      cursor: not-allowed;
+    }
+    .upgrade-button::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      background: rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      transition: width 0.4s, height 0.4s;
+    }
+    .upgrade-button:hover::after {
+      width: 200px;
+      height: 200px;
+    }
+    input, select {
+      padding: 10px;
+      margin: 5px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+    }
+    .profile-section {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- ログイン/アカウント作成画面 -->
+    <div id="loginScreen" class="active">
+      <h2>クリッカーシミュレーター</h2>
+      <input type="text" id="usernameInput" placeholder="ユーザー名">
+      <select id="iconSelect">
+        <option value="😺">😺 猫</option>
+        <option value="🐶">🐶 犬</option>
+        <option value="🦁">🦁 ライオン</option>
+        <option value="🦄">🦄 ユニコーン</option>
+      </select>
+      <button onclick="createAccount()">アカウント作成</button>
+      <button onclick="login()">ログイン</button>
+    </div>
+
+    <!-- ゲーム画面 -->
+    <div id="gameScreen">
+      <h2>クリッカーシミュレーター</h2>
+      <p>ユーザー: <span id="displayUsername"></span> (<span id="displayIcon"></span>)</p>
+      <p>ユーザーID: <span id="userId"></span></p>
+      <p>ポイント: <span id="points">0</span></p>
+      <button id="clickButton" onclick="clickPoint()">クリック！</button>
+      <div>
+        <button onclick="toggleClickMode('auto')">オートクリック</button>
+        <button onclick="toggleClickMode('quick')">クイッククリック</button>
+        <p>モード: <span id="clickMode">手動</span></p>
+      </div>
+      <div class="tab-bar">
+        <button class="tab-button" onclick="showUpgrades()">アップグレード</button>
+        <button class="tab-button" onclick="showSettings()">設定</button>
+      </div>
+    </div>
+
+    <!-- アップグレード画面 -->
+    <div id="upgradesScreen">
+      <h2>アップグレード</h2>
+      <p>ポイント: <span id="upgradePoints">0</span></p>
+      <div class="upgrade-section">
+        <button class="upgrade-button" onclick="buyUpgrade(0)">クリック強化<br>コスト: <span id="upgradeCost0">10</span><br>レベル: <span id="upgradeLevel0">0</span></button>
+        <button class="upgrade-button" onclick="buyUpgrade(1)">オート速度<br>コスト: <span id="upgradeCost1">50</span><br>レベル: <span id="upgradeLevel1">0</span></button>
+        <button class="upgrade-button" onclick="buyUpgrade(2)">クイックボーナス<br>コスト: <span id="upgradeCost2">100</span><br>レベル: <span id="upgradeLevel2">0</span></button>
+        <button class="upgrade-button" onclick="buyUpgrade(3)">ポイント倍率<br>コスト: <span id="upgradeCost3">200</span><br>レベル: <span id="upgradeLevel3">0</span></button>
+        <button class="upgrade-button" onclick="buyUpgrade(4)">オート効率<br>コスト: <span id="upgradeCost4">500</span><br>レベル: <span id="upgradeLevel4">0</span></button>
+        <button class="upgrade-button" onclick="buyUpgrade(5)">ラッキーボーナス<br>コスト: <span id="upgradeCost5">1000</span><br>レベル: <span id="upgradeLevel5">0</span></button>
+      </div>
+      <button class="tab-button" onclick="backToGame()">戻る</button>
+    </div>
+
+    <!-- 設定画面 -->
+    <div id="settingsScreen">
+      <h2>設定</h2>
+      <p>ユーザーID: <span id="settingsUserId"></span></p>
+      <input type="text" id="newUsername" placeholder="新しいユーザー名">
+      <select id="newIcon">
+        <option value="😺">😺 猫</option>
+        <option value="🐶">🐶 犬</option>
+        <option value="🦁">🦁 ライオン</option>
+        <option value="🦄">🦄 ユニコーン</option>
+      </select>
+      <button onclick="updateProfile()">プロフィール更新</button>
+      <button onclick="confirmReset()">ステータスリセット</button>
+      <button onclick="confirmDelete()">アカウント削除</button>
+      <button class="tab-button" onclick="backToGame()">戻る</button>
+    </div>
+  </div>
+
+  <script>
+    let points = 0;
+    let user = null;
+    let clickMode = 'manual';
+    let upgrades = [
+      { level: 0, cost: 10, effect: 1 }, // クリック強化
+      { level: 0, cost: 50, effect: 0.1 }, // オート速度
+      { level: 0, cost: 100, effect: 2 }, // クイックボーナス
+      { level: 0, cost: 200, effect: 1.5 }, // ポイント倍率
+      { level: 0, cost: 500, effect: 0.2 }, // オート効率
+      { level: 0, cost: 1000, effect: 0.05 } // ラッキーボーナス
+    ];
+    let autoInterval = null;
+
+    // UUID生成関数
+    function generateUUID() {
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+      });
+    }
+
+    // アカウント作成
+    function createAccount() {
+      const username = document.getElementById('usernameInput').value;
+      const iconwards = document.getElementById('iconSelect').value;
+      if (username) {
+        const userId = generateUUID();
+        user = { id: userId, username, icon: iconwards, points: 0, upgrades: upgrades, clickMode: 'manual' };
+        localStorage.setItem('clickerUser', JSON.stringify(user));
+        console.log('アカウント作成:', user);
+        loadGame();
+      } else {
+        alert('ユーザー名を入力してください');
+      }
+    }
+
+    // ログイン
+    function login() {
+      const savedUser = localStorage.getItem('clickerUser');
+      if (savedUser) {
+        user = JSON.parse(savedUser);
+        console.log('ログイン成功:', user);
+        loadGame();
+      } else {
+        alert('アカウントが見つかりません。作成してください。');
+      }
+    }
+
+    // ゲーム画面の読み込み
+    function loadGame() {
+      document.getElementById('loginScreen').classList.remove('active');
+      document.getElementById('gameScreen').classList.add('active');
+      points = user.points;
+      upgrades = user.upgrades;
+      clickMode = user.clickMode;
+      console.log('ゲーム画面読み込み:', { points, clickMode });
+      updateUI();
+      if (clickMode === 'auto' && upgrades[1].level > 0) {
+        startAutoClick();
+      }
+    }
+
+    // UI更新
+    function updateUI() {
+      document.getElementById('points').textContent = Math.floor(points);
+      document.getElementById('upgradePoints').textContent = Math.floor(points);
+      document.getElementById('displayUsername').textContent = user.username;
+      document.getElementById('displayIcon').textContent = user.icon;
+      document.getElementById('userId').textContent = user.id;
+      document.getElementById('clickMode').textContent = clickMode === 'auto' ? 'オートクリック' : clickMode === 'quick' ? 'クイッククリック' : '手動';
+      upgrades.forEach((upgrade, i) => {
+        document.getElementById(`upgradeCost${i}`).textContent = upgrade.cost;
+        document.getElementById(`upgradeLevel${i}`).textContent = upgrade.level;
+        const button = document.getElementsByClassName('upgrade-button')[i];
+        button.disabled = points < upgrade.cost;
+        button.classList.toggle('disabled', points < upgrade.cost);
+      });
+      saveGame();
+    }
+
+    // クリックポイント
+    function clickPoint() {
+      if (clickMode === 'quick' && upgrades[2].level === 0) {
+        alert('クイッククリックモードはアップグレードが必要です！');
+        return;
+      }
+      let pointGain = 1 + upgrades[0].level * upgrades[0].effect;
+      if (clickMode === 'quick') pointGain *= (1 + upgrades[2].level * upgrades[2].effect);
+      pointGain *= (1 + upgrades[3].level * upgrades[3].effect);
+      if (upgrades[5].level > 0 && Math.random() < upgrades[5].level * upgrades[5].effect) {
+        pointGain *= 2;
+      }
+      points += pointGain;
+      showPointPop(pointGain);
+      updateUI();
+      console.log('クリックポイント:', pointGain);
+    }
+
+    // ポイントポップアニメーション
+    function showPointPop(amount) {
+      const pop = document.createElement('div');
+      pop.className = 'point-pop';
+      pop.textContent = `+${Math.floor(amount)}`;
+      pop.style.left = `${Math.random() * 100 + 300}px`;
+      pop.style.top = '50%';
+      document.body.appendChild(pop);
+      setTimeout(() => pop.remove(), 1000);
+    }
+
+    // クリックモード切り替え
+    function toggleClickMode(mode) {
+      if (mode === 'auto' && upgrades[1].level === 0) {
+        alert('オートクリックモードはアップグレードが必要です！');
+        return;
+      }
+      clickMode = mode;
+      if (mode === 'auto') {
+        startAutoClick();
+      } else {
+        clearInterval(autoInterval);
+      }
+      updateUI();
+      console.log('クリックモード変更:', mode);
+    }
+
+    // オートクリック開始
+    function startAutoClick() {
+      clearInterval(autoInterval);
+      autoInterval = setInterval(() => {
+        let pointGain = upgrades[1].level * upgrades[1].effect;
+        pointGain *= (1 + upgrades[4].level * upgrades[4].effect);
+        if (upgrades[5].level > 0 && Math.random() < upgrades[5].level * upgrades[5].effect) {
+          pointGain *= 2;
+        }
+        points += pointGain;
+        updateUI();
+      }, 1000);
+      console.log('オートクリック開始');
+    }
+
+    // アップグレード購入
+    function buyUpgrade(index) {
+      if (points >= upgrades[index].cost) {
+        points -= upgrades[index].cost;
+        upgrades[index].level++;
+        upgrades[index].cost = Math.round(upgrades[index].cost * 1.5);
+        if (index === 1 && clickMode === 'auto') {
+          startAutoClick();
+        }
+        updateUI();
+        console.log(`アップグレード${index}購入: レベル${upgrades[index].level}`);
+      } else {
+        alert('ポイントが足りません！');
+      }
+    }
+
+    // アップグレード画面表示
+    function showUpgrades() {
+      document.getElementById('gameScreen').classList.remove('active');
+      document.getElementById('upgradesScreen').classList.add('active');
+      updateUI();
+      console.log('アップグレード画面表示');
+    }
+
+    // 設定画面表示
+    function showSettings() {
+      document.getElementById('gameScreen').classList.remove('active');
+      document.getElementById('upgradesScreen').classList.remove('active');
+      document.getElementById('settingsScreen').classList.add('active');
+      document.getElementById('settingsUserId').textContent = user.id;
+      document.getElementById('newUsername').value = user.username;
+      document.getElementById('newIcon').value = user.icon;
+      console.log('設定画面表示');
+    }
+
+    // プロフィール更新
+    function updateProfile() {
+      const newUsername = document.getElementById('newUsername').value;
+      const newIcon = document.getElementById('newIcon').value;
+      if (newUsername) {
+        user.username = newUsername;
+        user.icon = newIcon;
+        updateUI();
+        backToGame();
+        console.log('プロフィール更新:', { username: newUsername, icon: newIcon });
+      } else {
+        alert('ユーザー名を入力してください');
+      }
+    }
+
+    // ステータスリセット確認
+    function confirmReset() {
+      if (confirm('ステータスをリセットしますか？')) {
+        points = 0;
+        upgrades = [
+          { level: 0, cost: 10, effect: 1 },
+          { level: 0, cost: 50, effect: 0.1 },
+          { level: 0, cost: 100, effect: 2 },
+          { level: 0, cost: 200, effect: 1.5 },
+          { level: 0, cost: 500, effect: 0.2 },
+          { level: 0, cost: 1000, effect: 0.05 }
+        ];
+        clickMode = 'manual';
+        clearInterval(autoInterval);
+        user.points = points;
+        user.upgrades = upgrades;
+        user.clickMode = clickMode;
+        updateUI();
+        console.log('ステータスリセット');
+      }
+    }
+
+    // アカウント削除確認
+    function confirmDelete() {
+      const inputId = prompt('アカウント削除にはユーザーIDの入力が必要です:');
+      if (inputId === user.id) {
+        localStorage.removeItem('clickerUser');
+        window.location.reload();
+        console.log('アカウント削除');
+      } else {
+        alert('ユーザーIDが正しくありません！');
+      }
+    }
+
+    // ゲームに戻る
+    function backToGame() {
+      document.getElementById('settingsScreen').classList.remove('active');
+      document.getElementById('upgradesScreen').classList.remove('active');
+      document.getElementById('gameScreen').classList.add('active');
+      console.log('ゲーム画面に戻る');
+    }
+
+    // ゲーム保存
+    function saveGame() {
+      user.points = points;
+      user.upgrades = upgrades;
+      user.clickMode = clickMode;
+      localStorage.setItem('clickerUser', JSON.stringify(user));
+      console.log('ゲーム保存:', user);
+    }
+
+    // ページ読み込み時に既存アカウントを確認
+    window.onload = () => {
+      const savedUser = localStorage.getItem('clickerUser');
+      if (savedUser) {
+        user = JSON.parse(savedUser);
+        loadGame();
+      } else {
+        console.log('既存アカウントなし');
+      }
+    };
+  </script>
+</body>
+</html>
