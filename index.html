@@ -21,20 +21,24 @@
       background: #1a1a1a;
       border-radius: 15px;
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+      overflow: hidden;
     }
     h2 {
       color: #00f7ff;
       text-shadow: 0 0 5px rgba(0, 247, 255, 0.5);
+      font-size: clamp(20px, 3vw, 24px);
     }
     p, span {
       color: #e0e0e0;
       word-break: break-word;
       overflow-wrap: break-word;
+      font-size: clamp(14px, 2vw, 16px);
+      max-width: 100%;
     }
     button {
       padding: 12px 24px;
       margin: 8px;
-      font-size: 16px;
+      font-size: clamp(14px, 2vw, 16px);
       cursor: pointer;
       border: none;
       border-radius: 8px;
@@ -80,10 +84,10 @@
       0% { opacity: 1; transform: translateY(0); }
       100% { opacity: 0; transform: translateY(-50px); }
     }
-    #loginScreen, #gameScreen, #upgradesScreen, #settingsScreen {
+    #loginScreen, #gameScreen, #upgradesScreen, #settingsScreen, #itemsScreen, #pvpScreen, #searchScreen {
       display: none;
     }
-    #loginScreen.active, #gameScreen.active, #upgradesScreen.active, #settingsScreen.active {
+    #loginScreen.active, #gameScreen.active, #upgradesScreen.active, #settingsScreen.active, #itemsScreen.active, #pvpScreen.active, #searchScreen.active {
       display: block;
     }
     .tab-bar {
@@ -98,27 +102,23 @@
       background: #00f7ff;
       color: #000000;
     }
-    .mode-button {
-      background: #f4ff00;
-      color: #000000;
-    }
-    .upgrade-section {
+    .upgrade-section, .item-section {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
       gap: 10px;
       margin-top: 20px;
     }
-    .upgrade-button {
+    .upgrade-button, .item-button {
       background: #39ff14;
       color: #000000;
       max-width: 150px;
     }
-    .upgrade-button.disabled {
+    .upgrade-button.disabled, .item-button.disabled {
       background: #4a4a4a;
       color: #b0b0b0;
       cursor: not-allowed;
     }
-    .upgrade-button::after {
+    .item-button::after, .upgrade-button::after {
       content: '';
       position: absolute;
       top: 50%;
@@ -130,7 +130,7 @@
       transform: translate(-50%, -50%);
       transition: width 0.4s, height 0.4s;
     }
-    .upgrade-button:hover::after {
+    .item-button:hover::after, .upgrade-button:hover::after {
       width: 200px;
       height: 200px;
     }
@@ -139,13 +139,13 @@
       margin: 5px;
       border-radius: 5px;
       border: 2px solid #ff00ff;
-      font-size: 16px;
+      font-size: clamp(14px, 2vw, 16px);
       background: #1a1a1a;
       color: #ffffff;
       max-width: 300px;
       word-break: break-word;
     }
-    .profile-section {
+    .profile-section, .pvp-section, .search-section {
       margin-top: 20px;
     }
   </style>
@@ -172,14 +172,13 @@
       <p>ユーザー: <span id="displayUsername"></span> (<span id="displayIcon"></span>)</p>
       <p>ユーザーID: <span id="userId"></span></p>
       <p>ポイント: <span id="points">0</span></p>
+      <p>アクティブ効果: <span id="activeEffects">なし</span></p>
       <button id="clickButton" onclick="clickPoint()">クリック！</button>
-      <div>
-        <button class="mode-button" onclick="toggleClickMode('auto')">オートクリック</button>
-        <button class="mode-button" onclick="toggleClickMode('quick')">クイッククリック</button>
-        <p>モード: <span id="clickMode">手動</span></p>
-      </div>
       <div class="tab-bar">
         <button class="tab-button" onclick="showUpgrades()">アップグレード</button>
+        <button class="tab-button" onclick="showItems()">アイテム</button>
+        <button class="tab-button" onclick="showPvp()">PvP</button>
+        <button class="tab-button" onclick="showSearch()">検索</button>
         <button class="tab-button" onclick="showSettings()">設定</button>
       </div>
     </div>
@@ -191,10 +190,45 @@
       <div class="upgrade-section">
         <button class="upgrade-button" onclick="buyUpgrade(0)">クリック強化<br>コスト: <span id="upgradeCost0">10</span><br>レベル: <span id="upgradeLevel0">0</span></button>
         <button class="upgrade-button" onclick="buyUpgrade(1)">オート速度<br>コスト: <span id="upgradeCost1">50</span><br>レベル: <span id="upgradeLevel1">0</span></button>
-        <button class="upgrade-button" onclick="buyUpgrade(2)">クイックボーナス<br>コスト: <span id="upgradeCost2">100</span><br>レベル: <span id="upgradeLevel2">0</span></button>
-        <button class="upgrade-button" onclick="buyUpgrade(3)">ポイント倍率<br>コスト: <span id="upgradeCost3">200</span><br>レベル: <span id="upgradeLevel3">0</span></button>
-        <button class="upgrade-button" onclick="buyUpgrade(4)">オート効率<br>コスト: <span id="upgradeCost4">500</span><br>レベル: <span id="upgradeLevel4">0</span></button>
-        <button class="upgrade-button" onclick="buyUpgrade(5)">ラッキーボーナス<br>コスト: <span id="upgradeCost5">1000</span><br>レベル: <span id="upgradeLevel5">0</span></button>
+        <button class="upgrade-button" onclick="buyUpgrade(2)">ポイント倍率<br>コスト: <span id="upgradeCost2">100</span><br>レベル: <span id="upgradeLevel2">0</span></button>
+        <button class="upgrade-button" onclick="buyUpgrade(3)">オート効率<br>コスト: <span id="upgradeCost3">200</span><br>レベル: <span id="upgradeLevel3">0</span></button>
+        <button class="upgrade-button" onclick="buyUpgrade(4)">ラッキーボーナス<br>コスト: <span id="upgradeCost4">500</span><br>レベル: <span id="upgradeLevel4">0</span></button>
+      </div>
+      <button class="tab-button" onclick="backToGame()">戻る</button>
+    </div>
+
+    <!-- アイテム画面 -->
+    <div id="itemsScreen">
+      <h2>アイテム</h2>
+      <p>ポイント: <span id="itemPoints">0</span></p>
+      <div class="item-section">
+        <button class="item-button" onclick="buyItem(0)">クリック2倍ポーション<br>コスト: 500<br>所持: <span id="itemCount0">0</span></button>
+        <button class="item-button" onclick="useItem(0)">使用</button>
+        <button class="item-button" onclick="buyItem(1)">ギフトボックス<br>コスト: 200<br>所持: <span id="itemCount1">0</span></button>
+        <button class="item-button" onclick="useItem(1)">使用</button>
+      </div>
+      <button class="tab-button" onclick="backToGame()">戻る</button>
+    </div>
+
+    <!-- PvP画面 -->
+    <div id="pvpScreen">
+      <h2>CPS PvP</h2>
+      <p>ポイント: <span id="pvpPoints">0</span></p>
+      <p>ランキング: <span id="rank">未参加</span></p>
+      <p>対戦ステータス: <span id="pvpStatus">待機中</span></p>
+      <button class="tab-button" onclick="findOpponent()">対戦相手を探す</button>
+      <button class="tab-button" onclick="readyForMatch()" disabled id="readyButton">準備完了</button>
+      <button class="tab-button" onclick="startMatch()" disabled id="startButton">試合開始</button>
+      <button class="tab-button" onclick="backToGame()">戻る</button>
+    </div>
+
+    <!-- 検索画面 -->
+    <div id="searchScreen">
+      <h2>プレイヤー検索</h2>
+      <input type="text" id="searchInput" placeholder="ユーザー名またはID">
+      <button class="tab-button" onclick="searchPlayer()">検索</button>
+      <div class="search-section">
+        <p>結果: <span id="searchResult">未検索</span></p>
       </div>
       <button class="tab-button" onclick="backToGame()">戻る</button>
     </div>
@@ -220,18 +254,29 @@
   <script>
     let points = 0;
     let user = null;
-    let clickMode = 'manual';
     let upgrades = [
       { level: 0, cost: 10, effect: 1 }, // クリック強化
       { level: 0, cost: 50, effect: 0.1 }, // オート速度
-      { level: 0, cost: 100, effect: 2 }, // クイックボーナス
-      { level: 0, cost: 200, effect: 1.5 }, // ポイント倍率
-      { level: 0, cost: 500, effect: 0.2 }, // オート効率
-      { level: 0, cost: 1000, effect: 0.05 } // ラッキーボーナス
+      { level: 0, cost: 100, effect: 1.5 }, // ポイント倍率
+      { level: 0, cost: 200, effect: 0.2 }, // オート効率
+      { level: 0, cost: 500, effect: 0.05 } // ラッキーボーナス
+    ];
+    let items = [
+      { name: 'クリック2倍ポーション', count: 0, cost: 500 }, // 5分間クリック2倍
+      { name: 'ギフトボックス', count: 0, cost: 200 } // 50～1000ポイント
     ];
     let autoInterval = null;
+    let doubleClickActive = false;
+    let doubleClickTimeout = null;
+    let pvpRank = 0;
+    let pvpStatus = '待機中';
+    let opponent = null;
+    let playerReady = false;
+    let opponentReady = false;
+    let clickCount = 0;
+    let matchStartTime = null;
 
-    // UUID生成関数
+    // UUID生成
     function generateUUID() {
       return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
         const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
@@ -239,12 +284,20 @@
       });
     }
 
-    // 画面切り替え関数
+    // モックデータベース（他のプレイヤー）
+    let mockDatabase = JSON.parse(localStorage.getItem('mockDatabase')) || [
+      { id: generateUUID(), username: 'プレイヤー1', icon: '😺', points: 1000, rank: 1 },
+      { id: generateUUID(), username: 'プレイヤー2', icon: '🐶', points: 800, rank: 2 },
+      { id: generateUUID(), username: 'プレイヤー1', icon: '🦁', points: 600, rank: 3 }
+    ];
+
+    // 画面切り替え
     function switchScreen(showId) {
-      const screens = ['loginScreen', 'gameScreen', 'upgradesScreen', 'settingsScreen'];
+      const screens = ['loginScreen', 'gameScreen', 'upgradesScreen', 'settingsScreen', 'itemsScreen', 'pvpScreen', 'searchScreen'];
       screens.forEach(id => document.getElementById(id).classList.remove('active'));
       document.getElementById(showId).classList.add('active');
       console.log(`画面切り替え: ${showId}`);
+      updateUI();
     }
 
     // アカウント作成
@@ -253,8 +306,10 @@
       const icon = document.getElementById('iconSelect').value;
       if (username) {
         const userId = generateUUID();
-        user = { id: userId, username, icon, points: 0, upgrades: upgrades, clickMode: 'manual' };
+        user = { id: userId, username, icon, points: 0, upgrades, items, rank: 0 };
         localStorage.setItem('clickerUser', JSON.stringify(user));
+        mockDatabase.push({ id: userId, username, icon, points: 0, rank: 0 });
+        localStorage.setItem('mockDatabase', JSON.stringify(mockDatabase));
         console.log('アカウント作成:', user);
         loadGame();
       } else {
@@ -274,28 +329,32 @@
       }
     }
 
-    // ゲーム画面の読み込み
+    // ゲーム画面読み込み
     function loadGame() {
       switchScreen('gameScreen');
       points = user.points;
       upgrades = user.upgrades;
-      clickMode = user.clickMode;
-      console.log('ゲーム画面読み込み:', { points, clickMode });
+      items = user.items || items;
+      pvpRank = user.rank || 0;
+      console.log('ゲーム画面読み込み:', { points, upgrades, items, pvpRank });
       updateUI();
-      if (clickMode === 'auto' && upgrades[1].level > 0) {
-        startAutoClick();
-      }
+      startAutoClick();
+      checkMonthlyReset();
     }
 
     // UI更新
     function updateUI() {
-      document.getElementBytargets
       document.getElementById('points').textContent = Math.floor(points);
       document.getElementById('upgradePoints').textContent = Math.floor(points);
+      document.getElementById('itemPoints').textContent = Math.floor(points);
+      document.getElementById('pvpPoints').textContent = Math.floor(points);
       document.getElementById('displayUsername').textContent = user.username;
       document.getElementById('displayIcon').textContent = user.icon;
       document.getElementById('userId').textContent = user.id;
-      document.getElementById('clickMode').textContent = clickMode === 'auto' ? 'オートクリック' : clickMode === 'quick' ? 'クイッククリック' : '手動';
+      document.getElementById('settingsUserId').textContent = user.id;
+      document.getElementById('rank').textContent = pvpRank || '未参加';
+      document.getElementById('pvpStatus').textContent = pvpStatus;
+      document.getElementById('activeEffects').textContent = doubleClickActive ? `クリック2倍ポーション (残り${Math.floor((doubleClickTimeout - Date.now()) / 1000)}秒)` : 'なし';
       upgrades.forEach((upgrade, i) => {
         document.getElementById(`upgradeCost${i}`).textContent = upgrade.cost;
         document.getElementById(`upgradeLevel${i}`).textContent = upgrade.level;
@@ -303,22 +362,28 @@
         button.disabled = points < upgrade.cost;
         button.classList.toggle('disabled', points < upgrade.cost);
       });
+      items.forEach((item, i) => {
+        document.getElementById(`itemCount${i}`).textContent = item.count;
+        const buyButton = document.getElementsByClassName('item-button')[i * 2];
+        const useButton = document.getElementsByClassName('item-button')[i * 2 + 1];
+        buyButton.disabled = points < item.cost;
+        buyButton.classList.toggle('disabled', points < item.cost);
+        useButton.disabled = item.count <= 0;
+        useButton.classList.toggle('disabled', item.count <= 0);
+      });
       saveGame();
     }
 
     // クリックポイント
     function clickPoint() {
-      if (clickMode === 'quick' && upgrades[2].level === 0) {
-        alert('クイッククリックモードはアップグレードが必要です！');
-        return;
-      }
       let pointGain = 1 + upgrades[0].level * upgrades[0].effect;
-      if (clickMode === 'quick') pointGain *= (1 + upgrades[2].level * upgrades[2].effect);
-      pointGain *= (1 + upgrades[3].level * upgrades[3].effect);
-      if (upgrades[5].level > 0 && Math.random() < upgrades[5].level * upgrades[5].effect) {
+      pointGain *= (1 + upgrades[2].level * upgrades[2].effect);
+      if (upgrades[4].level > 0 && Math.random() < upgrades[4].level * upgrades[4].effect) {
         pointGain *= 2;
       }
+      if (doubleClickActive) pointGain *= 2;
       points += pointGain;
+      clickCount++;
       showPointPop(pointGain);
       updateUI();
       console.log('クリックポイント:', pointGain);
@@ -335,51 +400,22 @@
       setTimeout(() => pop.remove(), 1000);
     }
 
-    // クリックモード切り替え
-    function toggleClickMode(mode) {
-      console.log(`モード切り替え試行: ${mode}, 現在のモード: ${clickMode}`);
-      if (mode === clickMode) {
-        clickMode = 'manual';
-        console.log('同一モード選択、モードを手動にリセット');
-      } else if (mode === 'auto' && upgrades[1].level === 0) {
-        alert('オートクリックモードはアップグレードが必要です！');
-        console.log('オートクリック失敗: アップグレード1が不足');
-        return;
-      } else if (mode === 'quick' && upgrades[2].level === 0) {
-        alert('クイッククリックモードはアップグレードが必要です！');
-        console.log('クイッククリック失敗: アップグレード2が不足');
-        return;
-      } else {
-        clickMode = mode;
-        console.log(`モード変更成功: ${clickMode}`);
-      }
-      if (autoInterval) {
-        clearInterval(autoInterval);
-        autoInterval = null;
-        console.log('オートクリックインターバルクリア');
-      }
-      if (clickMode === 'auto' && upgrades[1].level > 0) {
-        startAutoClick();
-      }
-      updateUI();
-    }
-
-    // オートクリック開始
+    // ファーストオートモード
     function startAutoClick() {
       if (autoInterval) {
         clearInterval(autoInterval);
         console.log('既存のオートクリックインターバルをクリア');
       }
       autoInterval = setInterval(() => {
-        let pointGain = upgrades[1].level * upgrades[1].effect;
-        pointGain *= (1 + upgrades[4].level * upgrades[4].effect);
-        if (upgrades[5].level > 0 && Math.random() < upgrades[5].level * upgrades[5].effect) {
+        let pointGain = 0.1 + upgrades[1].level * upgrades[1].effect;
+        pointGain *= (1 + upgrades[3].level * upgrades[3].effect);
+        if (upgrades[4].level > 0 && Math.random() < upgrades[4].level * upgrades[4].effect) {
           pointGain *= 2;
         }
         points += pointGain;
         updateUI();
-      }, 1000);
-      console.log('オートクリック開始');
+      }, 500);
+      console.log('ファーストオートモード開始');
     }
 
     // アップグレード購入
@@ -388,9 +424,6 @@
         points -= upgrades[index].cost;
         upgrades[index].level++;
         upgrades[index].cost = Math.round(upgrades[index].cost * 1.5);
-        if (index === 1 && clickMode === 'auto') {
-          startAutoClick();
-        }
         updateUI();
         console.log(`アップグレード${index}購入: レベル${upgrades[index].level}`);
       } else {
@@ -398,11 +431,165 @@
       }
     }
 
+    // アイテム購入
+    function buyItem(index) {
+      if (points >= items[index].cost) {
+        points -= items[index].cost;
+        items[index].count++;
+        updateUI();
+        console.log(`アイテム${items[index].name}購入: 所持${items[index].count}`);
+      } else {
+        alert('ポイントが足りません！');
+      }
+    }
+
+    // アイテム使用
+    function useItem(index) {
+      if (items[index].count <= 0) {
+        alert('アイテムがありません！');
+        return;
+      }
+      items[index].count--;
+      if (index === 0) { // クリック2倍ポーション
+        doubleClickActive = true;
+        doubleClickTimeout = Date.now() + 300000; // 5分
+        setTimeout(() => {
+          doubleClickActive = false;
+          updateUI();
+          console.log('クリック2倍ポーション効果終了');
+        }, 300000);
+        console.log('クリック2倍ポーション使用');
+      } else if (index === 1) { // ギフトボックス
+        const reward = Math.floor(Math.random() * (1000 - 50 + 1)) + 50;
+        points += reward;
+        showPointPop(reward);
+        console.log(`ギフトボックス使用: ${reward}ポイント獲得`);
+      }
+      updateUI();
+    }
+
+    // 対戦相手検索
+    function findOpponent() {
+      if (pvpStatus !== '待機中') return;
+      pvpStatus = '対戦相手検索中...';
+      opponent = mockDatabase[Math.floor(Math.random() * mockDatabase.length)];
+      while (opponent.id === user.id) {
+        opponent = mockDatabase[Math.floor(Math.random() * mockDatabase.length)];
+      }
+      playerReady = false;
+      opponentReady = false;
+      clickCount = 0;
+      document.getElementById('readyButton').disabled = false;
+      document.getElementById('startButton').disabled = true;
+      updateUI();
+      console.log('対戦相手発見:', opponent);
+      setTimeout(() => {
+        opponentReady = true;
+        pvpStatus = '対戦相手が見つかりました！準備完了してください。';
+        updateUI();
+      }, Math.random() * 3000 + 1000);
+    }
+
+    // 準備完了
+    function readyForMatch() {
+      playerReady = true;
+      pvpStatus = opponentReady ? '準備完了！試合開始してください。' : '相手の準備を待っています...';
+      document.getElementById('readyButton').disabled = true;
+      if (opponentReady) document.getElementById('startButton').disabled = false;
+      updateUI();
+      console.log('プレイヤー準備完了');
+    }
+
+    // 試合開始
+    function startMatch() {
+      pvpStatus = '試合中...';
+      clickCount = 0;
+      matchStartTime = Date.now();
+      document.getElementById('startButton').disabled = true;
+      updateUI();
+      console.log('PvP試合開始');
+      setTimeout(() => {
+        const cps = clickCount / 10;
+        const opponentCps = Math.random() * 10 + 5; // モック: 5～15 CPS
+        let winner = cps > opponentCps ? user : opponent;
+        pvpRank = Math.max(1, pvpRank || mockDatabase.length + 1);
+        if (winner.id === user.id) {
+          pvpRank = Math.max(1, pvpRank - 1);
+          points += pvpRank === 1 ? 1000 : pvpRank === 2 ? 500 : pvpRank === 3 ? 200 : 100;
+          items[0].count += pvpRank === 1 ? 2 : 1;
+          items[1].count += pvpRank === 1 ? 3 : pvpRank === 2 ? 2 : 1;
+        }
+        mockDatabase.forEach(p => {
+          if (p.id === user.id) p.rank = pvpRank;
+          else if (p.id === opponent.id && cps > opponentCps) p.rank = Math.min(mockDatabase.length + 1, p.rank + 1);
+        });
+        mockDatabase.sort((a, b) => (a.rank || mockDatabase.length + 1) - (b.rank || mockDatabase.length + 1));
+        localStorage.setItem('mockDatabase', JSON.stringify(mockDatabase));
+        pvpStatus = `試合終了！あなたのCPS: ${cps.toFixed(2)}, 相手のCPS: ${opponentCps.toFixed(2)}. 勝者: ${winner.username}`;
+        document.getElementById('readyButton').disabled = true;
+        setTimeout(() => {
+          pvpStatus = '待機中';
+          opponent = null;
+          playerReady = false;
+          opponentReady = false;
+          updateUI();
+        }, 3000);
+        updateUI();
+        console.log('PvP試合終了:', { cps, opponentCps, winner: winner.username });
+      }, 10000);
+    }
+
+    // プレイヤー検索
+    function searchPlayer() {
+      const query = document.getElementById('searchInput').value;
+      const result = mockDatabase.find(p => p.username === query || p.id === query);
+      document.getElementById('searchResult').textContent = result
+        ? `ユーザー: ${result.username} (${result.icon}), ポイント: ${result.points}, ランク: ${result.rank || '未参加'}`
+        : 'プレイヤーが見つかりません';
+      console.log('プレイヤー検索:', query, result);
+    }
+
+    // 月次リセット
+    function checkMonthlyReset() {
+      const now = new Date();
+      const lastReset = new Date(localStorage.getItem('lastReset') || now);
+      if (now.getMonth() !== lastReset.getMonth() || now.getFullYear() !== lastReset.getFullYear()) {
+        mockDatabase.forEach(p => {
+          if (p.rank === 1) p.points += 1000;
+          else if (p.rank === 2) p.points += 500;
+          else if (p.rank === 3) p.points += 200;
+          p.rank = 0;
+        });
+        pvpRank = 0;
+        localStorage.setItem('mockDatabase', JSON.stringify(mockDatabase));
+        localStorage.setItem('lastReset', now.toISOString());
+        console.log('月次リセット実行');
+      }
+    }
+
     // アップグレード画面表示
     function showUpgrades() {
       switchScreen('upgradesScreen');
-      updateUI();
       console.log('アップグレード画面表示');
+    }
+
+    // アイテム画面表示
+    function showItems() {
+      switchScreen('itemsScreen');
+      console.log('アイテム画面表示');
+    }
+
+    // PvP画面表示
+    function showPvp() {
+      switchScreen('pvpScreen');
+      console.log('PvP画面表示');
+    }
+
+    // 検索画面表示
+    function showSearch() {
+      switchScreen('searchScreen');
+      document.getElementById('searchResult').textContent = '未検索';
+      console.log('検索画面表示');
     }
 
     // 設定画面表示
@@ -421,6 +608,9 @@
       if (newUsername) {
         user.username = newUsername;
         user.icon = newIcon;
+        mockDatabase.find(p => p.id === user.id).username = newUsername;
+        mockDatabase.find(p => p.id === user.id).icon = newIcon;
+        localStorage.setItem('mockDatabase', JSON.stringify(mockDatabase));
         updateUI();
         backToGame();
         console.log('プロフィール更新:', { username: newUsername, icon: newIcon });
@@ -429,35 +619,41 @@
       }
     }
 
-    // ステータスリセット確認
+    // ステータスリセット
     function confirmReset() {
       if (confirm('ステータスをリセットしますか？')) {
         points = 0;
         upgrades = [
           { level: 0, cost: 10, effect: 1 },
           { level: 0, cost: 50, effect: 0.1 },
-          { level: 0, cost: 100, effect: 2 },
-          { level: 0, cost: 200, effect: 1.5 },
-          { level: 0, cost: 500, effect: 0.2 },
-          { level: 0, cost: 1000, effect: 0.05 }
+          { level: 0, cost: 100, effect: 1.5 },
+          { level: 0, cost: 200, effect: 0.2 },
+          { level: 0, cost: 500, effect: 0.05 }
         ];
-        clickMode = 'manual';
-        if (autoInterval) {
-          clearInterval(autoInterval);
-          autoInterval = null;
-        }
+        items = [
+          { name: 'クリック2倍ポーション', count: 0, cost: 500 },
+          { name: 'ギフトボックス', count: 0, cost: 200 }
+        ];
+        pvpRank = 0;
+        mockDatabase.find(p => p.id === user.id).rank = 0;
+        if (autoInterval) clearInterval(autoInterval);
+        startAutoClick();
         user.points = points;
         user.upgrades = upgrades;
-        user.clickMode = clickMode;
+        user.items = items;
+        user.rank = pvpRank;
+        localStorage.setItem('mockDatabase', JSON.stringify(mockDatabase));
         updateUI();
         console.log('ステータスリセット');
       }
     }
 
-    // アカウント削除確認
+    // アカウント削除
     function confirmDelete() {
       const inputId = prompt('アカウント削除にはユーザーIDの入力が必要です:');
       if (inputId === user.id) {
+        mockDatabase = mockDatabase.filter(p => p.id !== user.id);
+        localStorage.setItem('mockDatabase', JSON.stringify(mockDatabase));
         localStorage.removeItem('clickerUser');
         window.location.reload();
         console.log('アカウント削除');
@@ -476,8 +672,12 @@
     function saveGame() {
       user.points = points;
       user.upgrades = upgrades;
-      user.clickMode = clickMode;
+      user.items = items;
+      user.rank = pvpRank;
+      mockDatabase.find(p => p.id === user.id).points = points;
+      mockDatabase.find(p => p.id === user.id).rank = pvpRank;
       localStorage.setItem('clickerUser', JSON.stringify(user));
+      localStorage.setItem('mockDatabase', JSON.stringify(mockDatabase));
       console.log('ゲーム保存:', user);
     }
 
