@@ -8,8 +8,8 @@
     body {
       font-family: 'Segoe UI', Arial, sans-serif;
       text-align: center;
-      background: linear-gradient(135deg, #1e3c72, #2a5298);
-      color: #fff;
+      background: linear-gradient(135deg, #2c3e50, #3498db);
+      color: #212121;
       margin: 0;
       padding: 0;
       overflow-x: hidden;
@@ -18,13 +18,16 @@
       max-width: 700px;
       margin: 20px auto;
       padding: 20px;
-      background: rgba(255, 255, 255, 0.95);
+      background: #f5f5f5;
       border-radius: 15px;
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
     }
     h2 {
-      color: #1e3c72;
+      color: #1a237e;
       text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+    }
+    p, span {
+      color: #212121;
     }
     button {
       padding: 12px 24px;
@@ -34,7 +37,8 @@
       border: none;
       border-radius: 8px;
       transition: transform 0.2s, box-shadow 0.2s;
-      color: white;
+      color: #ffffff;
+      display: inline-block;
     }
     button:hover {
       transform: scale(1.05);
@@ -59,11 +63,12 @@
     }
     .point-pop {
       position: absolute;
-      color: #ffd700;
+      color: #fbc02d;
       font-size: 20px;
       font-weight: bold;
       animation: floatUp 1s ease-out forwards;
       pointer-events: none;
+      z-index: 1000;
     }
     @keyframes floatUp {
       0% { opacity: 1; transform: translateY(0); }
@@ -80,9 +85,14 @@
       justify-content: center;
       gap: 10px;
       margin-bottom: 20px;
+      visibility: visible;
+      z-index: 10;
     }
     .tab-button {
-      background: #3f51b5;
+      background: #1976d2;
+    }
+    .mode-button {
+      background: #43a047;
     }
     .upgrade-section {
       display: grid;
@@ -91,12 +101,13 @@
       margin-top: 20px;
     }
     .upgrade-button {
-      background: #ff5722;
+      background: #f57c00;
       position: relative;
       overflow: hidden;
     }
     .upgrade-button.disabled {
-      background: #999;
+      background: #bdbdbd;
+      color: #424242;
       cursor: not-allowed;
     }
     .upgrade-button::after {
@@ -119,8 +130,10 @@
       padding: 10px;
       margin: 5px;
       border-radius: 5px;
-      border: 1px solid #ccc;
+      border: 1px solid #e0e0e0;
       font-size: 16px;
+      background: #ffffff;
+      color: #212121;
     }
     .profile-section {
       margin-top: 20px;
@@ -151,8 +164,8 @@
       <p>ポイント: <span id="points">0</span></p>
       <button id="clickButton" onclick="clickPoint()">クリック！</button>
       <div>
-        <button onclick="toggleClickMode('auto')">オートクリック</button>
-        <button onclick="toggleClickMode('quick')">クイッククリック</button>
+        <button class="mode-button" onclick="toggleClickMode('auto')">オートクリック</button>
+        <button class="mode-button" onclick="toggleClickMode('quick')">クイッククリック</button>
         <p>モード: <span id="clickMode">手動</span></p>
       </div>
       <div class="tab-bar">
@@ -216,13 +229,21 @@
       });
     }
 
+    // 画面切り替え関数
+    function switchScreen(showId) {
+      const screens = ['loginScreen', 'gameScreen', 'upgradesScreen', 'settingsScreen'];
+      screens.forEach(id => document.getElementById(id).classList.remove('active'));
+      document.getElementById(showId).classList.add('active');
+      console.log(`画面切り替え: ${showId}`);
+    }
+
     // アカウント作成
     function createAccount() {
       const username = document.getElementById('usernameInput').value;
-      const iconwards = document.getElementById('iconSelect').value;
+      const icon = document.getElementById('iconSelect').value;
       if (username) {
         const userId = generateUUID();
-        user = { id: userId, username, icon: iconwards, points: 0, upgrades: upgrades, clickMode: 'manual' };
+        user = { id: userId, username, icon, points: 0, upgrades: upgrades, clickMode: 'manual' };
         localStorage.setItem('clickerUser', JSON.stringify(user));
         console.log('アカウント作成:', user);
         loadGame();
@@ -245,8 +266,7 @@
 
     // ゲーム画面の読み込み
     function loadGame() {
-      document.getElementById('loginScreen').classList.remove('active');
-      document.getElementById('gameScreen').classList.add('active');
+      switchScreen('gameScreen');
       points = user.points;
       upgrades = user.upgrades;
       clickMode = user.clickMode;
@@ -332,7 +352,7 @@
         points += pointGain;
         updateUI();
       }, 1000);
-      console.log('オートクリック開始');
+      console.log('オート言クリック開始');
     }
 
     // アップグレード購入
@@ -353,17 +373,14 @@
 
     // アップグレード画面表示
     function showUpgrades() {
-      document.getElementById('gameScreen').classList.remove('active');
-      document.getElementById('upgradesScreen').classList.add('active');
+      switchScreen('upgradesScreen');
       updateUI();
       console.log('アップグレード画面表示');
     }
 
     // 設定画面表示
     function showSettings() {
-      document.getElementById('gameScreen').classList.remove('active');
-      document.getElementById('upgradesScreen').classList.remove('active');
-      document.getElementById('settingsScreen').classList.add('active');
+      switchScreen('settingsScreen');
       document.getElementById('settingsUserId').textContent = user.id;
       document.getElementById('newUsername').value = user.username;
       document.getElementById('newIcon').value = user.icon;
@@ -421,9 +438,7 @@
 
     // ゲームに戻る
     function backToGame() {
-      document.getElementById('settingsScreen').classList.remove('active');
-      document.getElementById('upgradesScreen').classList.remove('active');
-      document.getElementById('gameScreen').classList.add('active');
+      switchScreen('gameScreen');
       console.log('ゲーム画面に戻る');
     }
 
@@ -444,6 +459,7 @@
         loadGame();
       } else {
         console.log('既存アカウントなし');
+        switchScreen('loginScreen');
       }
     };
   </script>
